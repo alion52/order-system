@@ -4,29 +4,17 @@ FROM php:8.2-apache
 RUN apt-get update && \
     apt-get install -y \
         libpq-dev \
-        libzip-dev \
         libssl-dev \
+        libzip-dev \
         git \
-        unzip \
     && rm -rf /var/lib/apt/lists/*
 
-# Установка расширений PHP (ключевое изменение!)
-RUN docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql && \
-    docker-php-ext-install \
-        pdo \
-        pdo_pgsql \
-        pgsql \
-        sockets \
-    && pecl install \
-        redis \
-    && docker-php-ext-enable \
-        redis \
-        opcache
-
-# Явная настройка расширений
-RUN echo "extension=pdo_pgsql.so" > /usr/local/etc/php/conf.d/pdo_pgsql.ini && \
-    echo "extension=pgsql.so" > /usr/local/etc/php/conf.d/pgsql.ini && \
-    echo "extension=redis.so" > /usr/local/etc/php/conf.d/redis.ini
+# Установка и настройка PHP расширений
+RUN docker-php-ext-install pdo pdo_pgsql sockets && \
+    pecl install redis && \
+    docker-php-ext-enable redis && \
+    echo "extension=redis.so" > /usr/local/etc/php/conf.d/redis.ini && \
+    echo "extension=sockets.so" > /usr/local/etc/php/conf.d/sockets.ini
 
 # Копирование файлов приложения
 COPY . /var/www/html/
@@ -39,5 +27,5 @@ RUN chown -R www-data:www-data /var/www/html && \
 # Рабочая директория
 WORKDIR /var/www/html
 
-EXPOSE 80
-CMD ["apache2-foreground"]
+EXPOSE 10000
+CMD ["php", "-S", "0.0.0.0:10000", "-t", "/var/www/html"]
