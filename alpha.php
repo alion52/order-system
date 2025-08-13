@@ -5,11 +5,11 @@ header('Content-Type: application/json');
 $redis = new Redis();
 try {
     // Подключение к Redis с аутентификацией
-    $redis->connect('red-d2e7dqbulbrs738pnNg', 6379); // Хост из вашего Yandex Cloud
+    $redis->connect('red-d2e7dqbulbrs738pnNg', 6379); // Хост из Yandex Cloud
     $redis->auth('LBnHE0RK3uJwQYYf6paEeVUwAaX5O3m'); // Пароль из Internal URL
 
     // Проверка подключения
-    if (!$redis->ping()) {
+    if ($redis->ping() != '+PONG') {
         throw new Exception('Redis connection failed');
     }
 
@@ -47,13 +47,19 @@ try {
     http_response_code(500);
     echo json_encode([
         'status' => 'error',
-        'message' => $e->getMessage(),
-        'trace' => $e->getTraceAsString() // Только для разработки!
+        'message' => $e->getMessage()
     ]);
 } finally {
-    // Безопасное освобождение блокировки
-    if (isset($redis) && $redis->get('alpha_lock') === '1') {
-        $redis->del('alpha_lock');
+    // Безопасное освобождение блокировки с повторной аутентификацией
+    if (isset($redis)) {
+        try {
+            $redis->auth('LBnHE0RK3uJwQYYf6paEeVUwAaX5O3m');
+            if ($redis->get('alpha_lock') === '1') {
+                $redis->del('alpha_lock');
+            }
+        } catch (Exception $e) {
+            error_log("Failed to release lock: " . $e->getMessage());
+        }
     }
 }
 ?>
