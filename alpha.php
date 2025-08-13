@@ -1,22 +1,36 @@
 <?php
 header('Content-Type: application/json');
 
-// Redis блокировка
+// Параметры из строки подключения
+$redisHost = 'red-d2e7dqbuibrs738pnikg';
+$redisPort = 6379;
+$redisPass = 'LBxHE0RK3vJvqOYYI6paEeVUwAaX503m';
+$timeout = 2; // Таймаут в секундах
+
 $redis = new Redis();
 try {
-    // Подключение к Redis с аутентификацией
-    $redis->connect('red-d2e7dqbuibrs738pnikg', 6379); // Хост из Yandex Cloud
-    $redis->auth('LBxHE0RK3vJvqOYYI6paEeVUwAaX503m'); // Пароль из Internal URL
-
-    // Проверка подключения
-    if ($redis->ping() != '+PONG') {
-        throw new Exception('Redis connection failed');
+    // 1. Подключение
+    if (!$redis->connect($redisHost, $redisPort, $timeout)) {
+        throw new Exception("Не удалось подключиться к серверу Redis");
     }
 
-    // Установка блокировки с атомарным TTL
-    $lockAcquired = $redis->set('alpha_lock', 1, ['nx', 'ex' => 2]);
-    if (!$lockAcquired) {
-        die(json_encode(['status' => 'error', 'message' => 'Script already running']));
+    // 2. Аутентификация
+    if (!$redis->auth($redisPass)) {
+        throw new Exception("Неверный пароль Redis");
+    }
+
+    // 3. Проверка подключения
+    $pong = $redis->ping();
+    if ($pong !== '+PONG') {
+        throw new Exception("Неверный ответ от Redis: " . $pong);
+    }
+
+    // 4. Пример использования (блокировка)
+    $lockKey = 'alpha_lock';
+    $lockTtl = 2; // В секундах
+
+    if (!$redis->set($lockKey, 1, ['nx', 'ex' => $lockTtl])) {
+        die(json_encode(['status' => 'error', 'message' => 'Операция уже выполняется']));
     }
 
     // Подключение к PostgreSQL
