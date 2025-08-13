@@ -1,6 +1,6 @@
 FROM php:8.2-apache
 
-# Устанавливаем зависимости для PostgreSQL и Redis
+# Установка зависимостей для PostgreSQL
 RUN apt-get update && \
     apt-get install -y libpq-dev && \
     docker-php-ext-install pdo pdo_pgsql && \
@@ -9,14 +9,11 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Копируем файлы проекта
+# Копируем файлы приложения
 COPY . /var/www/html/
 
-# Настраиваем права
+# Настройка прав
 RUN chown -R www-data:www-data /var/www/html
 
-# Порт для PHP-сервера
 EXPOSE 10000
-
-# Запускаем сервер
 CMD ["php", "-S", "0.0.0.0:10000", "-t", "/var/www/html"]
