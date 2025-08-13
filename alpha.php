@@ -6,7 +6,7 @@ $redis = new Redis();
 try {
     // Подключение к Redis с аутентификацией
     $redis->connect('red-d2e7dqbuibrs738pnikg', 6379); // Хост из Yandex Cloud
-    $redis->auth('LBxHE0RK3vJvqOYYI6paEeVUwAaX503m@red-d2e7dqbuibrs738pnikg'); // Пароль из Internal URL
+    $redis->auth('LBxHE0RK3vJvqOYYI6paEeVUwAaX503m'); // Пароль из Internal URL
 
     // Проверка подключения
     if ($redis->ping() != '+PONG') {
