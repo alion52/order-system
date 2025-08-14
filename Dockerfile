@@ -1,21 +1,19 @@
+# Используем официальный образ PHP с Apache
 FROM php:8.2-apache
 
-# Устанавливаем системные зависимости и инструменты
+# Устанавливаем системные зависимости
 RUN apt-get update && \
     apt-get install -y \
-        libpq-dev \       # Для PostgreSQL
-        libzip-dev \      # Для работы с zip
+        libpq-dev \
+        libzip-dev \
         git \
         unzip \
-        && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
-# Устанавливаем необходимые PHP-расширения
-RUN docker-php-ext-install \
-        pdo \
-        pdo_pgsql \      # Драйвер PostgreSQL
-        zip \
-        && pecl install redis \
-        && docker-php-ext-enable redis
+# Устанавливаем расширения PHP
+RUN docker-php-ext-install pdo pdo_pgsql zip && \
+    pecl install redis && \
+    docker-php-ext-enable redis
 
 # Включаем модуль rewrite в Apache
 RUN a2enmod rewrite
