@@ -1,25 +1,27 @@
+# Используем официальный образ PHP с Apache
 FROM php:8.2-apache
 
-# Установка системных зависимостей
+# Устанавливаем системные зависимости
 RUN apt-get update && \
     apt-get install -y \
         libpq-dev \
-        libssl-dev \
         libzip-dev \
         git \
+        unzip \
     && rm -rf /var/lib/apt/lists/*
 
-# Установка и настройка PHP расширений
-RUN docker-php-ext-install pdo pdo_pgsql sockets && \
+# Устанавливаем расширения PHP
+RUN docker-php-ext-install pdo pdo_pgsql zip && \
     pecl install redis && \
-    docker-php-ext-enable redis && \
-    echo "extension=redis.so" > /usr/local/etc/php/conf.d/redis.ini && \
-    echo "extension=sockets.so" > /usr/local/etc/php/conf.d/sockets.ini
+    docker-php-ext-enable redis
 
-# Копирование файлов приложения
+# Включаем модуль rewrite в Apache
+RUN a2enmod rewrite
+
+# Копируем файлы проекта
 COPY . /var/www/html/
 
-# Настройка прав
+# Устанавливаем права
 RUN chown -R www-data:www-data /var/www/html && \
     find /var/www/html -type d -exec chmod 755 {} \; && \
     find /var/www/html -type f -exec chmod 644 {} \;
@@ -27,5 +29,8 @@ RUN chown -R www-data:www-data /var/www/html && \
 # Рабочая директория
 WORKDIR /var/www/html
 
-EXPOSE 10000
-CMD ["php", "-S", "0.0.0.0:10000", "-t", "/var/www/html"]
+# Порт, который будет слушать Apache
+EXPOSE 80
+
+# Запуск Apache
+CMD ["apache2-foreground"]
